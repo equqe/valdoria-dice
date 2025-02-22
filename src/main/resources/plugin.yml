@@ -1,0 +1,31 @@
+name: valdoria-dice
+version: '1.0-SNAPSHOT'
+main: com.valdoria.valdoriaDice.ValdoriaDice
+api-version: '1.21'
+commands:
+  #player scope
+  rolla:
+    description: Rolls the dice of attack(1-12).
+    usage: /rolla
+    permission: dice.use
+  rolld:
+    description: Rolls the dice of defence(1-12).
+    usage: /rolld
+    permission: dice.use
+  rollr:
+    description: Rolls the dice of resist(1-12).
+    usage: /rollr
+    permission: dice.use
+  #admin scope
+  dice:
+    description: Admin command for reloading the dice plugin.
+    usage: /dice reload
+    permission: dice.admin
+  rolladd:
+    description: Admin command for adding some value to the rolling result of another player.
+    usage: /rolladd [amount] [player]
+    permission: dice.admin
+  rollremove:
+    description: Admin command for substracting some value from the rolling result of another player.
+    usage: /rollremove [amount] [player]
+    permission: dice.admin

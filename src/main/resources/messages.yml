@@ -1,0 +1,10 @@
+# To stop sending a message entirely, delete the whole line including the key/prefix.
+
+# Seen by anyone
+rolld: "&7Выпал куб &9защиты&7 на &e%dice%&7 персонажу &e%player%&7."
+rolla: "&7Выпал куб &cатаки&7 на &e%dice%&7 персонажу &e%player%&7."
+rollr: "&7Выпал куб &fуворота&7 на &e%dice%&7 персонажу &e%player%&7."
+
+# Seen by admins
+rolladd: "&7Теперь персонажу &e%player%&7 выпадают числа из диапазона &e+%amount%&7."
+rollremove: "&7Теперь персонажу &e%player%&7 выпадают числа из диапазона &e-%amount%&7."
