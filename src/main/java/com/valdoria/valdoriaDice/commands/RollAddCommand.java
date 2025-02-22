@@ -15,12 +15,13 @@ public class RollAddCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 2 && sender.hasPermission("dice.admin")) {
+        if (args.length == 3 && sender.hasPermission("dice.admin")) {
             try {
-                int amount = Integer.parseInt(args[0]);
-                Player target = plugin.getServer().getPlayer(args[1]);
+                String diceType = args[0];
+                int amount = Integer.parseInt(args[1]);
+                Player target = plugin.getServer().getPlayer(args[2]);
                 if (target != null) {
-                    plugin.addOffset(target, amount);
+                    plugin.addOffset(target, diceType, amount);
                     String message = plugin.formatUIMessage("rolladd", target.getName(), String.valueOf(amount));
                     if (message != null) {
                         sender.sendMessage(message);
@@ -32,7 +33,7 @@ public class RollAddCommand implements CommandExecutor {
                 sender.sendMessage("Неверное число.");
             }
         } else {
-            sender.sendMessage("Использование: /rolladd [amount] [player]");
+            sender.sendMessage("Использование: /rolladd [тип кубика] [amount] [player]");
         }
         return true;
     }

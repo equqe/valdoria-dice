@@ -18,11 +18,19 @@ dice.admin
 
 ## Commands
 
+
 USER SCOPE
-```/rollr``` -- roll resistance 
-```/rolld``` -- roll defence
-```/rolla``` -- roll attack
+
+
+- ```/rollr``` -- roll resistance 
+- ```/rollrm``` -- roll magic resistance 
+- ```/rolld``` -- roll defence
+- ```/rolldm``` -- roll magic defence
+- ```/rolla``` -- roll attack
+- ```/rollam``` -- roll magic attack
 
 ADMIN SCOPE
-```/rolladd [amount] [player]``` -- add a value to the player's roll
-```/rollremove [amount] [player]``` -- subtract a value from the player's roll 
+
+
+- ```/rolladd [type: defence, attack, resist, mdefence, mattack, mresist] [amount] [player]``` -- add a value to the player's roll
+- ```/rollremove [type] [amount] [player]``` -- subtract a value from the player's roll 

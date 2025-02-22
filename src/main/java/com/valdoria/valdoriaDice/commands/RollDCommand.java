@@ -17,7 +17,7 @@ public class RollDCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            int roll = plugin.rollDice(player);
+            int roll = plugin.rollDice(player, "defence");
             String message = plugin.formatUIMessage("rolld", String.valueOf(roll), player.getName());
             if (message != null) {
                 player.sendMessage(message);

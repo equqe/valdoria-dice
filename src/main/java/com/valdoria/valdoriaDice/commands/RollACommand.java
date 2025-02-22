@@ -17,7 +17,7 @@ public class RollACommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            int roll = plugin.rollDice(player);
+            int roll = plugin.rollDice(player, "attack");
             String message = plugin.formatUIMessage("rolla", String.valueOf(roll), player.getName());
             if (message != null) {
                 player.sendMessage(message);

@@ -1,22 +1,17 @@
 package com.valdoria.valdoriaDice;
 
+import com.valdoria.valdoriaDice.commands.*;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.entity.Player;
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import com.valdoria.valdoriaDice.commands.RollACommand;
-import com.valdoria.valdoriaDice.commands.RollAddCommand;
-import com.valdoria.valdoriaDice.commands.RollDCommand;
-import com.valdoria.valdoriaDice.commands.RollRCommand;
-import com.valdoria.valdoriaDice.commands.RollRemoveCommand;
-
 public final class ValdoriaDice extends JavaPlugin {
-    private HashMap<Player, Integer> offsets = new HashMap<>();
+    private HashMap<Player, HashMap<String, Integer>> offsets = new HashMap<>();
     private Random random = new Random();
     private YamlConfiguration messages;
 
@@ -27,6 +22,9 @@ public final class ValdoriaDice extends JavaPlugin {
         this.getCommand("rolla").setExecutor(new RollACommand(this));
         this.getCommand("rolld").setExecutor(new RollDCommand(this));
         this.getCommand("rollr").setExecutor(new RollRCommand(this));
+        this.getCommand("rollam").setExecutor(new RollAMCommand(this));
+        this.getCommand("rolldm").setExecutor(new RollDMCommand(this));
+        this.getCommand("rollrm").setExecutor(new RollRMCommand(this));
         this.getCommand("rolladd").setExecutor(new RollAddCommand(this));
         this.getCommand("rollremove").setExecutor(new RollRemoveCommand(this));
     }
@@ -39,33 +37,40 @@ public final class ValdoriaDice extends JavaPlugin {
     private void loadMessages() {
         File messagesFile = new File(getDataFolder(), "messages.yml");
         if (!messagesFile.exists()) {
-            saveResource("messages.yml", false);
+            saveResource("messages.yml", false); // Создаем messages.yml, если его нет
         }
-        messages = YamlConfiguration.loadConfiguration(messagesFile);
+        messages = YamlConfiguration.loadConfiguration(messagesFile); // Загружаем messages.yml
     }
 
-    public int rollDice(Player player) {
-        int offset = offsets.getOrDefault(player, 0);
+    public int rollDice(Player player, String diceType) {
+        int offset = offsets.getOrDefault(player, new HashMap<>()).getOrDefault(diceType, 0);
         return random.nextInt(12) + 1 + offset;
     }
 
-    public void addOffset(Player player, int amount) {
-        offsets.put(player, offsets.getOrDefault(player, 0) + amount);
+    public void addOffset(Player player, String diceType, int amount) {
+        HashMap<String, Integer> playerOffsets = offsets.getOrDefault(player, new HashMap<>());
+        playerOffsets.put(diceType, playerOffsets.getOrDefault(diceType, 0) + amount);
+        offsets.put(player, playerOffsets);
     }
 
-    public void removeOffset(Player player, int amount) {
-        int currentOffset = offsets.getOrDefault(player, 0);
-        offsets.put(player, Math.max(currentOffset - amount, 0));
+    public void removeOffset(Player player, String diceType, int amount) {
+        HashMap<String, Integer> playerOffsets = offsets.getOrDefault(player, new HashMap<>());
+        int currentOffset = playerOffsets.getOrDefault(diceType, 0);
+        playerOffsets.put(diceType, Math.max(currentOffset - amount, 0));
+        offsets.put(player, playerOffsets);
     }
 
     public String formatUIMessage(String key, String... vars) {
-        String msg = messages.getString(key, "&cСообщение не найдено: " + key);
+        String msg = messages.getString(key, "&cСообщение не найдено: " + key); // Получаем сообщение из messages.yml
         if (msg == null) return null;
 
         switch (key) {
             case "rolld":
             case "rolla":
             case "rollr":
+            case "rolldm":
+            case "rollam":
+            case "rollrm":
                 msg = msg.replace("%dice%", vars[0]).replace("%player%", vars[1]);
                 break;
             case "rolladd":
@@ -74,6 +79,6 @@ public final class ValdoriaDice extends JavaPlugin {
                 break;
         }
 
-        return ChatColor.translateAlternateColorCodes('&', msg);
+        return ChatColor.translateAlternateColorCodes('&', msg); // Преобразуем цветовые коды
     }
 }

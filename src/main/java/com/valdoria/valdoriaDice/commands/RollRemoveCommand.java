@@ -15,12 +15,13 @@ public class RollRemoveCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 2 && sender.hasPermission("dice.admin")) {
+        if (args.length == 3 && sender.hasPermission("dice.admin")) {
             try {
-                int amount = Integer.parseInt(args[0]);
-                Player target = plugin.getServer().getPlayer(args[1]);
+                String diceType = args[0];
+                int amount = Integer.parseInt(args[1]);
+                Player target = plugin.getServer().getPlayer(args[2]);
                 if (target != null) {
-                    plugin.removeOffset(target, amount);
+                    plugin.removeOffset(target, diceType, amount);
                     String message = plugin.formatUIMessage("rollremove", target.getName(), String.valueOf(amount));
                     if (message != null) {
                         sender.sendMessage(message);
@@ -32,7 +33,7 @@ public class RollRemoveCommand implements CommandExecutor {
                 sender.sendMessage("Неверное число.");
             }
         } else {
-            sender.sendMessage("Использование: /rollremove [amount] [player]");
+            sender.sendMessage("Использование: /rollremove [тип кубика] [amount] [player]");
         }
         return true;
     }
