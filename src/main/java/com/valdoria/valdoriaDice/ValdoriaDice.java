@@ -1,24 +1,40 @@
 package com.valdoria.valdoriaDice;
 
-import com.valdoria.valdoriaDice.commands.*;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.entity.Player;
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.UUID;
 
-public final class ValdoriaDice extends JavaPlugin {
-    private HashMap<Player, HashMap<String, Integer>> offsets = new HashMap<>();
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import com.valdoria.valdoriaDice.commands.RollACommand;
+import com.valdoria.valdoriaDice.commands.RollAMCommand;
+import com.valdoria.valdoriaDice.commands.RollAddCommand;
+import com.valdoria.valdoriaDice.commands.RollDCommand;
+import com.valdoria.valdoriaDice.commands.RollDMCommand;
+import com.valdoria.valdoriaDice.commands.RollRCommand;
+import com.valdoria.valdoriaDice.commands.RollRMCommand;
+import com.valdoria.valdoriaDice.commands.RollRemoveCommand;
+
+public final class ValdoriaDice extends JavaPlugin implements Listener {
+    private HashMap<UUID, HashMap<String, Integer>> offsets = new HashMap<>();
     private Random random = new Random();
     private YamlConfiguration messages;
+    private Database database;
 
     @Override
     public void onEnable() {
-        getLogger().info("Hello!");
-        loadMessages(); // Загружаем messages.yml
+        database = new Database(this);
+        database.connect();
+
+        loadMessages();
+
         this.getCommand("rolla").setExecutor(new RollACommand(this));
         this.getCommand("rolld").setExecutor(new RollDCommand(this));
         this.getCommand("rollr").setExecutor(new RollRCommand(this));
@@ -27,41 +43,86 @@ public final class ValdoriaDice extends JavaPlugin {
         this.getCommand("rollrm").setExecutor(new RollRMCommand(this));
         this.getCommand("rolladd").setExecutor(new RollAddCommand(this));
         this.getCommand("rollremove").setExecutor(new RollRemoveCommand(this));
+
+        getServer().getPluginManager().registerEvents(this, this);
+
+        for (Player player : getServer().getOnlinePlayers()) {
+            loadPlayerData(player);
+        }
+
+        getLogger().info("Плагин успешно включен!");
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("Bye!");
+        for (Player player : getServer().getOnlinePlayers()) {
+            savePlayerData(player);
+        }
+
+        database.disconnect();
+
+        getLogger().info("Плагин успешно выключен!");
     }
 
     private void loadMessages() {
         File messagesFile = new File(getDataFolder(), "messages.yml");
         if (!messagesFile.exists()) {
-            saveResource("messages.yml", false); // Создаем messages.yml, если его нет
+            saveResource("messages.yml", false);
         }
-        messages = YamlConfiguration.loadConfiguration(messagesFile); // Загружаем messages.yml
+        messages = YamlConfiguration.loadConfiguration(messagesFile);
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        loadPlayerData(event.getPlayer());
+    }
+
+    private void loadPlayerData(Player player) {
+        HashMap<String, Integer> bonuses = database.loadBonuses(player.getUniqueId());
+        offsets.put(player.getUniqueId(), bonuses);
+    }
+
+    private void savePlayerData(Player player) {
+        HashMap<String, Integer> playerBonuses = offsets.get(player.getUniqueId());
+        if (playerBonuses != null) {
+            for (String diceType : playerBonuses.keySet()) {
+                database.saveBonus(player.getUniqueId(), diceType, playerBonuses.get(diceType));
+            }
+        }
     }
 
     public int rollDice(Player player, String diceType) {
-        int offset = offsets.getOrDefault(player, new HashMap<>()).getOrDefault(diceType, 0);
+        int offset = offsets.getOrDefault(player.getUniqueId(), new HashMap<>()).getOrDefault(diceType, 0);
         return random.nextInt(12) + 1 + offset;
     }
 
     public void addOffset(Player player, String diceType, int amount) {
-        HashMap<String, Integer> playerOffsets = offsets.getOrDefault(player, new HashMap<>());
-        playerOffsets.put(diceType, playerOffsets.getOrDefault(diceType, 0) + amount);
-        offsets.put(player, playerOffsets);
+        HashMap<String, Integer> playerOffsets = offsets.getOrDefault(player.getUniqueId(), new HashMap<>());
+        int newBonus = playerOffsets.getOrDefault(diceType, 0) + amount;
+        playerOffsets.put(diceType, newBonus);
+        offsets.put(player.getUniqueId(), playerOffsets);
+        
+        database.saveBonus(player.getUniqueId(), diceType, newBonus);
     }
 
     public void removeOffset(Player player, String diceType, int amount) {
-        HashMap<String, Integer> playerOffsets = offsets.getOrDefault(player, new HashMap<>());
+        HashMap<String, Integer> playerOffsets = offsets.getOrDefault(player.getUniqueId(), new HashMap<>());
         int currentOffset = playerOffsets.getOrDefault(diceType, 0);
-        playerOffsets.put(diceType, Math.max(currentOffset - amount, 0));
-        offsets.put(player, playerOffsets);
+        int newBonus = Math.max(currentOffset - amount, 0);
+        
+        if (newBonus > 0) {
+            playerOffsets.put(diceType, newBonus);
+            database.saveBonus(player.getUniqueId(), diceType, newBonus);
+        } else {
+            playerOffsets.remove(diceType);
+            database.removeBonus(player.getUniqueId(), diceType);
+        }
+        
+        offsets.put(player.getUniqueId(), playerOffsets);
     }
 
     public String formatUIMessage(String key, String... vars) {
-        String msg = messages.getString(key, "&cСообщение не найдено: " + key); // Получаем сообщение из messages.yml
+        String msg = messages.getString(key, "&cСообщение не найдено: " + key);
         if (msg == null) return null;
 
         switch (key) {
@@ -79,6 +140,6 @@ public final class ValdoriaDice extends JavaPlugin {
                 break;
         }
 
-        return ChatColor.translateAlternateColorCodes('&', msg); // Преобразуем цветовые коды
+        return ChatColor.translateAlternateColorCodes('&', msg);
     }
 }
